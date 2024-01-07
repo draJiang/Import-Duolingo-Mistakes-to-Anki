@@ -260,8 +260,8 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
     }
   }
 
-  // 英文-中文：中文翻译为英文
-  const divElement2 = document.querySelector('div._25OkR._1lDmW.d84Fd');
+  // 英文/日语-中文：中文翻译为外文、英文/日语-中文：外文翻译为中文（正面需要发音）、日语-中文：选择中文对应的日语单词
+  const divElement2 = document.querySelector('div._1lDmW.d84Fd');
 
   if (divElement2) {
     const aElement = divElement2.querySelector('div._1KUxv._11rtD');
@@ -269,26 +269,72 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
 
     f = aElement ? aElement.textContent : null;
     b = bElement ? bElement.textContent : null;
+
+    // _2UpLr _1x6bc _17DXh whuSQ _2gwtT _1nlVc _2fOC9 t5wFJ _3dtSu _25Cnc _3yAjN UCrz7 yTpGk
+
+    // 问题中存在语音播放按钮则表示此问题需要发音
+    if (divElement2.querySelector('button._1nlVc._2fOC9')) {
+      // 发音
+      audio = getAudio(f)
+    }
   }
 
-  // 英文-中文：英文翻译为中文（正面需要发音）
-  const divElement3 = document.querySelector('div._1Zh-d._1lDmW.d84Fd');
+  // 英文/日语-中文：外文翻译为中文（正面需要发音）
+  // const divElement3 = document.querySelector('div._1Zh-d._1lDmW.d84Fd');
 
+  // if (divElement3) {
+
+  //   const aElement = divElement3.querySelector('div._1KUxv._11rtD');
+  //   const bElement = document.querySelector('div._1UqAr._3Qruy');
+
+  //   f = aElement ? aElement.textContent : null;
+  //   b = bElement ? bElement.textContent : null;
+
+  //   // 发音
+  //   audio = getAudio(f)
+
+  // }
+
+  // 日语-中文：选择中文对应的日语单词
+  // const divElement4 = document.querySelector('div._3xBAJ._1lDmW.d84Fd');
+  // if (divElement4) {
+  //   const aElement = divElement4.querySelector('div._1KUxv._11rtD');
+  //   const bElement = document.querySelector('div._1UqAr._3Qruy');
+
+  //   f = aElement ? aElement.textContent : null;
+  //   b = bElement ? bElement.textContent : null;
+  // }
+
+  // 口语
+
+  // 英语听力
+  const divElement3 = document.querySelector('div._3Vm8B._2RC-4.d84Fd');
   if (divElement3) {
-    const aElement = divElement3.querySelector('div._1KUxv._11rtD');
+
+    const aElement = divElement3.querySelector('div._1iPXH._2Hg6H');
     const bElement = document.querySelector('div._1UqAr._3Qruy');
 
     f = aElement ? aElement.textContent : null;
     b = bElement ? bElement.textContent : null;
 
-    // 发音
-    audio = getAudio(f)
+    f += '<br><br>' + divElement3.querySelector('div._9XgpY._2Hg6H._1dBSx._3slGi')!.textContent + '<br><br>'
+
+    // 处理选项
+    const answers: Array<string | null> = [];
+    // 从aElement下属的data-test="challenge-judge-text"的span元素中获取答案
+    const answerSpans = divElement3.querySelectorAll('span[data-test="challenge-judge-text"]');
+    answerSpans.forEach((answerSpan, index) => {
+      answers.push(answerSpan.textContent);
+      f += index + '. ' + answerSpan.textContent + '<br>'
+    });
+
+    // 问题中存在语音播放按钮则表示此问题需要发音
+    if (divElement3.querySelector('button._1nlVc._2fOC9')) {
+      // 发音
+      audio = getAudio(f)
+    }
 
   }
-
-  // 口语
-
-  // 听力
 
   return { front: f, back: b, audio: audio };
 }
@@ -296,10 +342,23 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
 const getAudio = (f: string | null) => {
   let audio: audioType = []
 
+  const title = document.title;  // 获取网页的标题
+  let audioUrl = 'https://dict.youdao.com/dictvoice?type=0&audio='
+
+  if (title.includes('日语')) {
+    audioUrl = 'https://dict.youdao.com/dictvoice?le=jap&type=0&audio='
+  } else if (title.includes('韩语')) {
+    audioUrl = 'https://dict.youdao.com/dictvoice?le=ko&type=0&audio='
+  } else if (title.includes('xxxx')) {
+    audioUrl = 'https://dict.youdao.com/dictvoice?type=0&audio='
+  } else {
+    audioUrl = 'https://dict.youdao.com/dictvoice?type=0&audio='
+  }
+
   if (f) {
     const t = new Date().getTime().toString();
     audio = [{
-      "url": 'https://dict.youdao.com/dictvoice?type=0&audio=' + f,
+      "url": audioUrl + f,
       "filename": t + ".mp3",
       "fields": [
         "Front"
