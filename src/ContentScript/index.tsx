@@ -143,6 +143,11 @@ browser.runtime.sendMessage({ 'type': 'setModel', 'messages': {}, }).then((resul
 })
 
 
+type audioType = Array<{ url: string, filename: string, fields: Array<string> }> | []
+
+// 记录上一次获取到的错题信息，避免重复添加相同的错题
+let prevValues: { front: string | null, back: string | null, audio: audioType } | null = null;
+
 // 创建观察器实例
 const observer = new MutationObserver(function (mutations) {
   mutations.forEach(function (mutation) {
@@ -151,13 +156,18 @@ const observer = new MutationObserver(function (mutations) {
     console.log(targetDiv);
 
     if (targetDiv) {
-      const values: { front: string | null, back: string | null } = getValues()
-      console.log(values);
+      const newValues: { front: string | null, back: string | null, audio: audioType } = getValues();
+      console.log(newValues);
 
       // 返回一个对象 {front: B, back: A}
-      if (values.front !== '' && values.back !== '') {
+      if (newValues.front !== '' && newValues.back !== '' &&
+        (prevValues === null ||
+          newValues.front !== prevValues.front &&
+          newValues.back !== prevValues.back)) {
 
-        addToAnki(values)
+        addToAnki(newValues)
+        prevValues = newValues;
+
       }
 
       // 停止观察以防止无限循环
@@ -184,7 +194,7 @@ if (targetNode) {
 ////////////////////////////////////////////////////////////////////////////////////
 
 // 添加到 Anki 中
-const addToAnki = (note: { front: string | null, back: string | null }) => {
+const addToAnki = (note: { front: string | null, back: string | null, audio: audioType }) => {
 
   const p = {
     "note": {
@@ -194,7 +204,7 @@ const addToAnki = (note: { front: string | null, back: string | null }) => {
         [ANKI_INFO[0].field1]: note.front,
         [ANKI_INFO[0].field2]: note.back
       },
-      "audio": [],
+      "audio": note.audio,
       "tags": [
         "Duolingo"
       ]
@@ -206,9 +216,10 @@ const addToAnki = (note: { front: string | null, back: string | null }) => {
 }
 
 // 从页面上读取问题和答案
-function getValues(): { front: string | null, back: string | null } {
+function getValues(): { front: string | null, back: string | null, audio: Array<{ url: string, filename: string, fields: Array<string> }> } {
   let f: string | null = '';
   let b: string | null = '';
+  let audio: audioType = []
 
   // 英文-中文：英文填空+英文选项（正面需要发音）
   const divElement1 = document.querySelector('div._1y-0G._3IQqi._2RC-4.d84Fd');
@@ -242,6 +253,10 @@ function getValues(): { front: string | null, back: string | null } {
       });
 
       b = bElement.textContent;
+
+      // 发音
+      audio = getAudio(f)
+
     }
   }
 
@@ -265,11 +280,34 @@ function getValues(): { front: string | null, back: string | null } {
 
     f = aElement ? aElement.textContent : null;
     b = bElement ? bElement.textContent : null;
+
+    // 发音
+    audio = getAudio(f)
+
   }
 
   // 口语
 
   // 听力
 
-  return { front: f, back: b };
+  return { front: f, back: b, audio: audio };
+}
+
+const getAudio = (f: string | null) => {
+  let audio: audioType = []
+
+  if (f) {
+    const t = new Date().getTime().toString();
+    audio = [{
+      "url": 'https://dict.youdao.com/dictvoice?type=0&audio=' + f,
+      "filename": t + ".mp3",
+      "fields": [
+        "Front"
+      ]
+    }]
+  }
+
+
+  return audio
+
 }
