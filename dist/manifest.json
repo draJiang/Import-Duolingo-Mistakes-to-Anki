@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Hello",
+    "name": "Import Duolingo Mistakes to Anki",
     "description": "Bridging the gap between theory and practice.",
     "version": "0.0.1",
     "action": {
@@ -9,7 +9,7 @@
     },
     "content_scripts": [{
         "matches": [
-            "<all_urls>"
+            "https://www.duolingo.com/*"
         ],
         "js": [
             "js/vendor.js",
@@ -30,6 +30,6 @@
         "scripting"
     ],
     "host_permissions": [
-        "<all_urls>"
+        "https://www.duolingo.com/"
     ]
 }
