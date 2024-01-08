@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill'
 import { createParser, ParsedEvent, ReconnectInterval } from 'eventsource-parser'
-import { getDefaultDeckName, ankiAction, cardStyle } from '../utils/util'
+import { getDefaultDeckName, ankiAction, cardStyle, getUserInfo } from '../utils/util'
+import { userInfoType } from "../types"
 
 // 插件安装事件
 browser.runtime.onInstalled.addListener(function () {
@@ -247,37 +248,65 @@ function handleMessage(request: any, sender: any, sendResponse: any) {
     if (request.type === 'addNote') {
         console.log('addNote');
 
-        ankiAction(request.messages.anki_action_type, 6, request.messages.anki_arguments).then((result: any) => {
 
-            // 反馈处理结果
-            asyncSendResponse({ type: 'addToAnki', result: 'success', data: result.result, error: result.error });
+        (async () => {
 
-            //记录错题
-            const getMistakes = browser.storage.local.get({ "mistakes": [] })
-            getMistakes.then((result) => {
-                
-                console.log(result);
-                
-                let newDataList = result.mistakes
-                newDataList.unshift(request.messages.anki_arguments)
-                
-                if (newDataList.length > 100) {
-                    newDataList = newDataList.slice(0, 100);
-                  }
-                  
+            // 判断是否已经激活
+            const response = await browser.storage.local.get({ "mistakes": [] })
+            const mistakes = response.mistakes
+            const userInfo = await getUserInfo()
+            
+            if (mistakes.length > 10 && !userInfo.verified) {
+                // 未激活且免费额度已使用完毕
 
-                browser.storage.local.set({ mistakes: newDataList });
+            } else {
+                ankiAction(request.messages.anki_action_type, 6, request.messages.anki_arguments).then((result: any) => {
 
-            })
+                    // 反馈处理结果
+                    asyncSendResponse({ type: 'addToAnki', result: 'success', data: result.result, error: result.error });
+
+                    //记录错题
+                    let newDataList = mistakes
+                    newDataList.unshift(request.messages.anki_arguments)
+
+                    if (newDataList.length > 100) {
+                        newDataList = newDataList.slice(0, 100);
+                    }
+
+                    browser.storage.local.set({ mistakes: newDataList });
+
+                    // const getMistakes = browser.storage.local.get({ "mistakes": [] })
+                    // getMistakes.then((result) => {
+
+                    //     console.log(result);
+
+                    //     let newDataList = result.mistakes
+                    //     newDataList.unshift(request.messages.anki_arguments)
+
+                    //     if (newDataList.length > 100) {
+                    //         newDataList = newDataList.slice(0, 100);
+                    //     }
 
 
-        })
-            .catch((error) => {
+                    //     browser.storage.local.set({ mistakes: newDataList });
 
-                console.error(error);
-                asyncSendResponse({ type: 'addToAnki', result: 'failure', error: error.error });
+                    // })
 
-            });
+
+                })
+                    .catch((error) => {
+
+                        console.error(error);
+                        asyncSendResponse({ type: 'addToAnki', result: 'failure', error: error.error });
+
+                    });
+            }
+
+
+
+        })()
+
+
 
         // Return true to inform sendResponse that you will be calling it asynchronously
         return true;

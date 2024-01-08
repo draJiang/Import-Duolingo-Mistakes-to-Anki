@@ -133,7 +133,7 @@ export const DefaultPopup = () => {
     const thisGetUserStatus = (): Promise<userInfoType> => {
 
         return new Promise((resolve, reject) => {
-
+            setVerified(null)
             getUserInfo().then((userInfo: userInfoType) => {
 
                 // 更新 UI
