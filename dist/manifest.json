@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "Import Duolingo Mistakes to Anki",
-    "description": "Bridging the gap between theory and practice.",
+    "name": "Duolingo Mistake Importer",
+    "description": "Import Duolingo Mistakes to Anki.",
     "version": "0.0.1",
     "action": {
         "default_icon": "icon48.png",
@@ -25,9 +25,7 @@
         "128": "icon128.png"
     },
     "permissions": [
-        "storage",
-        "contextMenus",
-        "scripting"
+        "storage"
     ],
     "host_permissions": [
         "https://www.duolingo.com/"

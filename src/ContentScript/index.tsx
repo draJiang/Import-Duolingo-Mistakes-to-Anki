@@ -4,7 +4,7 @@ import React, { useEffect, useState, createContext, useContext } from "react";
 import ReactDOM from "react-dom";
 
 import { PopupCard } from "./PopupCard"
-
+import { getUserInfo } from "../utils/util"
 import { StyleProvider } from '@ant-design/cssinjs';
 
 const APP_NAME = '__jiang-Import-Duolingo-Mistakes-to-Anki'
@@ -134,13 +134,23 @@ async function showPopupCard(msg: any, MyBox: any, shadowRoot: any) {
 }
 
 let ANKI_INFO: any
+let USER_INFO: any
 
-// 页面载入后获取 Anki 牌组信息
-browser.runtime.sendMessage({ 'type': 'setModel', 'messages': {}, }).then((result) => {
+(async () => {
+  // 获取用户信息
+  USER_INFO = await getUserInfo()
 
-  ANKI_INFO = result.data
+  console.log('USER_INFO:');
+  console.log(USER_INFO);
 
-})
+  // 页面载入后获取 Anki 牌组信息
+  browser.runtime.sendMessage({ 'type': 'setModel', 'messages': {}, }).then((result) => {
+
+    ANKI_INFO = result.data
+
+  })
+})()
+
 
 
 type audioType = Array<{ url: string, filename: string, fields: Array<string> }> | []
@@ -153,7 +163,6 @@ const observer = new MutationObserver(function (mutations) {
   mutations.forEach(function (mutation) {
     // 用户回答问题错误（如果页面上存在类名为 'kVhsm' 且 data-test 属性包含 'blame-incorrect' 的 div 元素）
     const targetDiv = document.querySelector('div.kVhsm[data-test*="blame-incorrect"]');
-    console.log(targetDiv);
 
     if (targetDiv) {
       const newValues: { front: string | null, back: string | null, audio: audioType } = getValues();
@@ -164,6 +173,7 @@ const observer = new MutationObserver(function (mutations) {
         (prevValues === null ||
           newValues.front !== prevValues.front &&
           newValues.back !== prevValues.back)) {
+
 
         addToAnki(newValues)
         prevValues = newValues;

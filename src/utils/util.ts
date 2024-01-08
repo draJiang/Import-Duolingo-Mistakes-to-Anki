@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill'
+import {userInfoType} from "../types"
 
 // 将信息添加到 Anki
 export function ankiAction(action: any, version: any, params = {}) {
@@ -19,7 +20,7 @@ export function ankiAction(action: any, version: any, params = {}) {
 }
 
 // 获取 Anki 的 Deck 名称，添加到卡片会存放到这里
-export function getDefaultDeckName() {
+export const getDefaultDeckName = () => {
   return new Promise((resolve, reject) => {
 
     let defaultDeckName = ''
@@ -48,13 +49,13 @@ export function getDefaultDeckName() {
             ankiAction("createDeck", 6, { "deck": "Duolingo" }).then((response) => {
 
               defaultDeckName = 'Duolingo'
-              // resolve({ 'defaultDeckName': defaultDeckName })
+              resolve({ 'defaultDeckName': defaultDeckName })
 
             })
 
           } else {
             defaultDeckName = 'Duolingo'
-            // resolve({ 'defaultDeckName': defaultDeckName })
+            resolve({ 'defaultDeckName': defaultDeckName })
           }
 
 
@@ -69,7 +70,7 @@ export function getDefaultDeckName() {
 
       }
 
-      resolve({ 'defaultDeckName': defaultDeckName })
+      // resolve({ 'defaultDeckName': defaultDeckName })
 
     })
 
@@ -78,6 +79,52 @@ export function getDefaultDeckName() {
 
 
 }
+
+// 获取配置信息
+export async function getSettings() {
+  let items = await browser.storage.sync.get({
+      "newLicenseKey": ''
+  })
+  return items
+}
+
+// 获取用户相关信息
+export const getUserInfo = (): Promise<userInfoType> => {
+
+  return new Promise((resolve, reject) => {
+
+    browser.storage.sync.get(['newLicenseKey']).then(async (result) => {
+
+      if (browser.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      }
+
+      let verified = false
+
+      if (result.newLicenseKey) {
+        // 判断用户
+        const url = 'https://6r4atckmdr.us.aircode.run/index'
+        const headers = { 'Authorization': 'Bearer ' + result.newLicenseKey, 'Content-Type': 'application/json', }
+
+        await fetch(url, {
+          headers: headers
+        }).then(async (response) => {
+
+          await response.json().then((data) => {
+            verified = data.verified
+          })
+
+        })
+      }
+
+      resolve({ 'verified': verified })
+
+    })
+
+
+  });
+
+};
 
 export const cardStyle = `
 

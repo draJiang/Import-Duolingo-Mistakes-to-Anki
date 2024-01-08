@@ -8,3 +8,5 @@ declare namespace JSX {
     [elemName: string]: any;
   }
 }
+
+declare module "@smooth-ui/core-sc";

@@ -252,6 +252,25 @@ function handleMessage(request: any, sender: any, sendResponse: any) {
             // 反馈处理结果
             asyncSendResponse({ type: 'addToAnki', result: 'success', data: result.result, error: result.error });
 
+            //记录错题
+            const getMistakes = browser.storage.local.get({ "mistakes": [] })
+            getMistakes.then((result) => {
+                
+                console.log(result);
+                
+                let newDataList = result.mistakes
+                newDataList.unshift(request.messages.anki_arguments)
+                
+                if (newDataList.length > 100) {
+                    newDataList = newDataList.slice(0, 100);
+                  }
+                  
+
+                browser.storage.local.set({ mistakes: newDataList });
+
+            })
+
+
         })
             .catch((error) => {
 
