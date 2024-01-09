@@ -335,7 +335,7 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
     const answerSpans = divElement3.querySelectorAll('span[data-test="challenge-judge-text"]');
     answerSpans.forEach((answerSpan, index) => {
       answers.push(answerSpan.textContent);
-      f += index + '. ' + answerSpan.textContent + '<br>'
+      f += index + 1 + '. ' + answerSpan.textContent + '<br>'
     });
 
     // 问题中存在语音播放按钮则表示此问题需要发音

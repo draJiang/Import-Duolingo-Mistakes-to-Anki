@@ -1,4 +1,4 @@
-@font-face {
+/* @font-face {
     font-family: 'OPPOSans-R';
     src: url('../../public/font/OPPOSans-R.ttf') format('truetype');
 }
@@ -8,7 +8,7 @@ body {
     margin: 0;
     padding: 20px;
     border-radius: 4px;
-}
+} */
 
 #MyOptions {
     width: 380px;

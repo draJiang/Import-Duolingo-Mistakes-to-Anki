@@ -5,52 +5,16 @@ import ReactDOM from "react-dom";
 
 import { getUserInfo, getSettings } from "../utils/util"
 
+import ExportToExcel from "./ExportToExcel";
+import { Button, Divider } from "../Components/UIKit";
+
+
 import '../index.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import styled, { css } from 'styled-components';
 
-const Button = styled.button<{ type?: 'primary' | 'second' | 'link' }>`
-  width: 300px;
-  height: 48px;
-  flex-shrink: 0;
-  border-radius: 16px;
-  font-family: Inter;
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 900;
-  line-height: 18px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  margin-bottom: 20px;
 
-  &:active {
-    transform: translateY(3px);
-    box-shadow: none;
-  }
 
-  ${props => props.type === 'primary' && css`
-    color: white;
-    border: 0;
-    background: #1CB0F6;
-    box-shadow: 0px 4px 0px 0px #1899D6;
-  `}
-
-  ${props => props.type === 'second' && css`
-    color: #1899D6;
-    border: 2px solid #E5E5E5;
-    background: #FFF;
-    box-shadow: 0px 2px 0px 0px #E5E5E5;
-  `}
-
-  ${props => props.type === 'link' && css`
-    text-decoration: none;
-    color: #1CB0F6;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  `}
-`;
 
 
 import { userInfoType } from "../types"
@@ -62,16 +26,27 @@ export const DefaultPopup = () => {
     const inputRef = useRef<HTMLInputElement>(null); // 创建 ref，指定类型为 HTMLInputElement
     const [inputValue, setInputValue] = useState('');
 
+    const apiDataRef = useRef([]);
 
     useEffect(() => {
 
 
-        //记录错题
+        // 获取错题
         const getMistakes = browser.storage.local.get({ "mistakes": [] })
         getMistakes.then((result) => {
 
             console.log(result);
             setMistakes(result.mistakes)
+
+            // 处理 Excel 数据
+            apiDataRef.current = result.mistakes.map((mistake: { note: { fields: { Back: string, Front: string } } }) => {
+
+                return { 'Front': mistake.note.fields.Front, 'Back': mistake.note.fields.Back }
+
+            })
+
+            console.log(apiDataRef.current);
+
 
         })
 
@@ -146,35 +121,43 @@ export const DefaultPopup = () => {
 
         })
 
-
-
-
-
     }
 
     return (
         <>
             <div id="DefaultPopup" style={{
                 width: '400px',
-                padding: '20px 20px 10px 20px',
+                padding: '20px',
                 fontFamily: 'din-round,sans-serif',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center'
             }}>
-                <div className='bg-red-400 text-lg' style={{ margin: '20px 4px' }}>
+                <div
+                    style={{
+                        margin: '20px 4px',
+                        display: "flex", flexDirection: "column", alignItems: "center"
+                    }}>
 
-                    {verified ?
+                    <div style={{ marginBottom: '4px' }}>
+                        {verified ?
 
-                        <>
-                            已收集 {mistakes.length} 个错题
-                        </>
-                        :
-                        <>
-                            已收集 {mistakes.length}/10 个错题，激活解锁上限
-                        </>
-                    }
+                            <span>
+                                {mistakes.length} Mistakes Collected
+                            </span>
+                            :
+                            <span>
+                                {mistakes.length}/10 Mistakes Collected，Activate Unlock Limit
+                            </span>
+
+                        }
+                    </div>
+
+                    <ExportToExcel apiData={apiDataRef.current} fileName='Duolingo_Mistakes' />
                 </div>
+
+                <Divider />
+
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -183,7 +166,8 @@ export const DefaultPopup = () => {
                     <form onSubmit={saveOptions} style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        marginTop: '20px'
                     }}>
                         <div style={{
                             display: 'flex',
@@ -224,19 +208,19 @@ export const DefaultPopup = () => {
 
                             <Button
                                 type="primary"
-
-                            >激活</Button>
+                                style={{ marginBottom: '20px' }}
+                            >Activate</Button>
 
                             <Button
                                 type="second"
+                                style={{ marginBottom: '20px' }}
                                 onClick={() => window.open('https://jiang.lemonsqueezy.com/checkout/buy/c34834c6-e13d-48b3-84e3-d3c332ea1189')}
-                            >获取激活码</Button>
+                            >Purchase Activation Code</Button>
 
                             <Button
                                 type="link"
                                 onClick={() => window.open('https://jiangzilong.notion.site/Duolingo-Anki-f89c9ba9f8614c8fa0ff5cbceadb56ed')}
-                            >使用说明</Button>
-
+                            >Usage Guidelines</Button>
 
 
                             {/* <Button type="submit" style={{ width: '100%', marginBottom: '10px' }}>激活</Button>
