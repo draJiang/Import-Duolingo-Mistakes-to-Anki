@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Duolingo Mistake Importer",
+    "name": "Duolingo Mistake Exporter",
     "description": "Import Duolingo Mistakes to Anki.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "action": {
         "default_icon": "icon48.png",
         "default_popup": "popup.html"

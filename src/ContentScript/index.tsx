@@ -233,7 +233,6 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
 
   // 英文-中文：英文填空+英文选项（正面需要发音）
   const divElement1 = document.querySelector('div._1y-0G._3IQqi._2RC-4.d84Fd');
-
   if (divElement1) {
     const aElement = divElement1.querySelector('div[dir="ltr"]');
     const bElement = document.querySelector('div._1UqAr._3Qruy');
@@ -265,14 +264,15 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
       b = bElement.textContent;
 
       // 发音
-      audio = getAudio(f)
+      audio = getAudio(f, ["Front"])
 
     }
   }
 
-  // 英文/日语-中文：中文翻译为外文、英文/日语-中文：外文翻译为中文（正面需要发音）、日语-中文：选择中文对应的日语单词
-  const divElement2 = document.querySelector('div._1lDmW.d84Fd');
+  //
 
+  // 英文/日语-中文：中文翻译为外文、英文/日语-中文：外文翻译为当前语言（正面需要发音）、日语-中文：选择中文对应的日语单词
+  const divElement2 = document.querySelector('div._1lDmW.d84Fd');
   if (divElement2) {
     const aElement = divElement2.querySelector('div._1KUxv._11rtD');
     const bElement = document.querySelector('div._1UqAr._3Qruy');
@@ -280,12 +280,29 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
     f = aElement ? aElement.textContent : null;
     b = bElement ? bElement.textContent : null;
 
+    // 问题是日语时需要处理罗马注音
+    if (aElement && aElement.querySelectorAll('span.lwL3T').length > 0) {
+
+      f = getJapaneseKana(document.querySelector('span.g-kCu > ruby._1YQpP')!)
+
+    }
+
+    // 答案是日语时需要处理一下罗马注音
+    if (bElement && bElement.querySelectorAll('span.lwL3T').length > 0) {
+
+      b = getJapaneseKana(bElement)
+
+    }
+
+
     // _2UpLr _1x6bc _17DXh whuSQ _2gwtT _1nlVc _2fOC9 t5wFJ _3dtSu _25Cnc _3yAjN UCrz7 yTpGk
 
     // 问题中存在语音播放按钮则表示此问题需要发音
     if (divElement2.querySelector('button._1nlVc._2fOC9')) {
       // 发音
-      audio = getAudio(f)
+      audio = getAudio(f, ["Front"])
+    } else {
+      audio = getAudio(b, ["Back"])
     }
   }
 
@@ -341,26 +358,63 @@ function getValues(): { front: string | null, back: string | null, audio: Array<
     // 问题中存在语音播放按钮则表示此问题需要发音
     if (divElement3.querySelector('button._1nlVc._2fOC9')) {
       // 发音
-      audio = getAudio(f)
+      audio = getAudio(f, ["Front"])
+    } else {
+      audio = getAudio(b, ["Back"])
     }
 
   }
 
+  // 日语选项题 challenge challenge-select
+  const divElement4 = document.querySelector('div._3pyWY._2RC-4.d84Fd');
+  if (divElement4) {
+    const aElement = document.querySelector('h1[data-test="challenge-header"]');
+    const choices = divElement4.querySelectorAll('ruby._1YQpP');
+    f = aElement ? aElement.textContent : '';
+    if (choices) {
+      f += '<br><br>'
+      choices.forEach((choice, index) => {
+
+        f += index + 1 + '. '
+
+        choice.querySelectorAll('span.lwL3T').forEach((span) => {
+          f += span.textContent ? span.textContent : ''
+        })
+
+        f += '<br>'
+
+      });
+    }
+
+
+    const bElement = document.querySelector('div._1UqAr._3Qruy');
+    if (bElement && bElement.querySelectorAll('span.lwL3T').length > 0) {
+
+      b = getJapaneseKana(bElement)
+
+    }
+
+  }
+
+
+
   return { front: f, back: b, audio: audio };
 }
 
-const getAudio = (f: string | null) => {
+const getAudio = (f: string | null, fields: Array<"Front" | "Back">) => {
   let audio: audioType = []
 
   const title = document.title;  // 获取网页的标题
   let audioUrl = 'https://dict.youdao.com/dictvoice?type=0&audio='
 
-  if (title.includes('日语')) {
+  if (title.includes('日语') || title.includes('Japanese')) {
+    // 日语
     audioUrl = 'https://dict.youdao.com/dictvoice?le=jap&type=0&audio='
   } else if (title.includes('韩语')) {
+    // 韩语
     audioUrl = 'https://dict.youdao.com/dictvoice?le=ko&type=0&audio='
-  } else if (title.includes('xxxx')) {
-    audioUrl = 'https://dict.youdao.com/dictvoice?type=0&audio='
+  } else if (title.includes('xxx')) {
+    audioUrl = 'https://dict.youdao.com/dictvoice?le=jap&type=0&audio='
   } else {
     audioUrl = 'https://dict.youdao.com/dictvoice?type=0&audio='
   }
@@ -369,14 +423,50 @@ const getAudio = (f: string | null) => {
     const t = new Date().getTime().toString();
     audio = [{
       "url": audioUrl + f,
-      "filename": t + ".mp3",
-      "fields": [
-        "Front"
-      ]
+      "filename": "audio.mp3",
+      "fields": fields
     }]
   }
 
 
   return audio
+
+}
+
+const getJapaneseKana = (element: Element) => {
+  let str = ''
+  const answerKataganaList = element.querySelectorAll('span.lwL3T');
+  const answerRomajiList = element.querySelectorAll('rt');
+
+  if (answerKataganaList.length > 0) {
+    //说英文学日语时需要处理罗马音注意片假名
+
+    // 假名
+    answerKataganaList?.forEach((answer, index) => {
+
+      if (answer) {
+        str += answer.textContent!
+      }
+
+
+    });
+
+    // b += '<br>'
+
+    // 罗马音
+    // answerRomajiList?.forEach((answer, index) => {
+
+    //   if (answer) {
+    //     b += answer.textContent!
+    //     if (answer.textContent === '') {
+    //       b + '&nbsp;'
+    //     }
+    //   }
+
+
+    // });
+  }
+
+  return str
 
 }
